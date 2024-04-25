@@ -1,0 +1,20 @@
+---
+title: "Sensitivity Analysis"
+author: "Sofia Ingersoll"
+date: 2024-4-16
+---
+
+### Set up
+```{r message = FALSE}
+library(tidyverse)
+library(purrr)
+library(here)
+library(lhs)
+
+```
+
+### Load Functions
+```{r}
+source(here("..","R","compute_almond_yield.R"))
+```
+

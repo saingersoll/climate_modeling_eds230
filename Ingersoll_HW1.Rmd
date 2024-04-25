@@ -1,0 +1,24 @@
+---
+title: "Assignment 1"
+author: "Sofia Ingersoll"
+date: 2024-04-04
+---
+# Solar Energy Function 
+
+In this function, we are utilizing panel yield (0-1),  performance ratio (0-1), annual average solar radiation (kWh), and solar panel area (m2) to calculate the energy (kWh) produced in a photovotalic system. The annual average solar radiation was selected using the information provided by [U.S. Energy Information Administration](https://www.eia.gov/energyexplained/solar/where-solar-is-found.php). The value for panel yield was determined using manufacture efficiency. The value for performance ratio was selected to account for site factors that impact efficiency. The solar panel area (m2) is the variable input for this function. 
+
+```{r}
+# function to calculate the energy (kWh) produced in a photovotalic system. 
+solar_yield <- function(A, r=0.2, H=5.66, PR=0.75) {
+  
+  E = A * r * H * PR
+  
+  return(E)
+}  
+```
+
+```{r}
+solar_yield(9)
+```
+
+

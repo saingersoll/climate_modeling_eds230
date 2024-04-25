@@ -1,0 +1,104 @@
+---
+title: "Sobol Assignment"
+authors: "Sofia Ingersoll"
+date: "2024 April 25"
+output:
+  html_document
+---
+# Part 1
+
+Paragraph on how results of the sensitivity analysis reported on in the paper might contribute to understanding (or prediction) within an environmental problem solving or management context.
+
+`building_energy_sobol.pdf`
+
+This study explores peak load sensitivity in dynamic building simulations, focusing on cooling demands in large office buildings. Using Morris elementary effect and Sobol indices, it analyzes possible climates affect cooling outcomes and assesses the sensitivity of various parameters. Ventilation rate is identified as a crucial influencing factor of electricity demand uncertainty, particularly in peak scenarios. Understanding these dynamics aids in designing more efficient HVAC systems, mitigating energy consumption, and addressing climate change challenges.
+
+# Part 2
+
+Use class model of atmospheric conductance
+
+- Windspeeds v are normally distributed with a `mean of 300 cm/s with a standard deviation of 50 cm/s`
+
+- For `vegetation height` assume that height is somewhere between `3.5 and 5.5 m` (but any value in that range is equally likely)
+
+- For the `kd and k0` parameters you can assume that they are normally distributed with `standard deviation of 1% of their default values`
+
+```{r set_up, message = FALSE}
+library(sensitivity)
+library(tidyverse)
+library(purrr)
+library(here)
+
+source("../R/Catm.R")
+```
+
+1. Use the Sobol approach to generate parameter values for the 4 parameters
+```{r}
+# generate two examples of random number from parameter distributions
+np <- 1000
+k_o <- rnorm(mean=0.1,sd=0.1*0.01, n=np)
+k_d <- rnorm(mean=0.7, sd=0.7*0.01, n=np)
+v <- rnorm(mean=300, sd=50, n=np)
+height <- runif(min=3.5, max=5.5, n=np)
+X1 <- cbind.data.frame(k_o, k_d, v, height=height)
+# repeat sampling
+k_o <- rnorm(mean=0.1,sd=0.1*0.01, n=np)
+k_d <- rnorm(mean=0.7, sd=0.7*0.01, n=np)
+v <- rnorm(mean=300, sd=50, n=np)
+height <- runif(min=3.5, max=5.5, n=np)
+X2 <- cbind.data.frame(k_o, k_d, v, height=height)
+
+# there are different versions of sobol functions that have different approaches for estimating
+# parameters and indices, we use an approach implemented by jansen
+sens_Catm_Sobol = sobolSalt(model = NULL, X1, X2, nboot = 100)
+# Take a look at the Sobol generated sensitivity object
+# your parameters sets for sensitivity analysis are in X
+```
+
+2. Run the atmospheric conductance model for these parameters
+```{r}
+# run model for all parameter sets
+# make sure you give the parameters names
+parms = as.data.frame(sens_Catm_Sobol$X)
+colnames(parms)= colnames(X1)
+res = pmap_dbl(parms, Catm)
+sens_Catm_Sobol = sensitivity::tell(sens_Catm_Sobol,res, res.names="ga")
+# main effect: partitions variance (main effect without co-variance) - sums approximately to one
+sens_Catm_Sobol$S
+
+# useful to add names
+row.names(sens_Catm_Sobol$S) = colnames(parms)
+sens_Catm_Sobol$S
+
+# total effect - accounts for parameter interactions
+row.names(sens_Catm_Sobol$T) = colnames(parms)
+sens_Catm_Sobol$T
+
+# Both the main effect and total effect can tell us something about how the parameter influences results
+print(sens_Catm_Sobol)
+
+# graph two most sensitive parameters
+both = cbind.data.frame(parms, gs=sens_Catm_Sobol$y)
+```
+
+3. Plot conductance estimates in a way that accounts for parameter uncertainty
+```{r}
+# look at overall gs sensitvity to uncertainty
+ggplot(both, aes(x=gs))+geom_histogram()+geom_vline(xintercept=mean(both$gs), col="cyan")
+
+```
+
+4. Plot conductance estimates against windspeed use the parameter that is 2nd in terms of total effect on response
+```{r}
+# look at response of conductance to the two most important variables
+ggplot(both, aes(k_d,gs, col=k_o))+geom_point()+labs(y="Conductance (mm/s)", x="k_d parameter")
+```
+5. Estimate the Sobel Indices for your outut
+```{r}
+# use second most sensitive parameter (using most important as color)
+ggplot(both, aes(k_o,gs, col=k_d))+geom_point()+labs(y="Conductance (mm/s)", x="k_d parameter")
+```
+
+6. Comment on what this tells you about how atmospheric conductance and its sensitivity to variation in windspped differs in this setting as compared to the setting that we examined in class where windspeed was lower and less variable and vegetation was taller.
+
+The example in class displayed mild correlation of slightly linear / exponential trends, as a result of the lowered variablity. In the case above, it is difficult to interpolate much information because there is such signficant parameter uncertainty. It is notable that the distribution of uncertainty is normalized in this example, whereas the class example was more right skewed.

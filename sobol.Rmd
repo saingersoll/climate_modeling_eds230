@@ -49,7 +49,7 @@ Generation of parameter sets slightly different
 Atmospheric Conductance as a function of windspeed, vegetation height and parameters
 
 ```{r, setup}
-source("../R/Catm.R")
+source("R/Catm.R")
 
 # generate two examples of random number from parameter distributions
 

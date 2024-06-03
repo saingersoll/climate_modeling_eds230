@@ -1,0 +1,108 @@
+---
+title: "Dynamics with 2 Variables Assignment"
+authors: "Sofia Ingersoll"
+date: "2024 April 25"
+output:
+  html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(sensitivity)
+library(tidyverse)
+library(deSolve)
+library(lhs)
+library(purrr)
+library(ggpubr)
+```
+
+## Part 1 
+
+I wanted to create a quasi-flexible model regarding the min_prey population required to partake in hunting and the rate of hunting, hunt_rate. I included a control that prevents hunting beyond the min_prey setting to ensure over hunting does not deplete the prey population. I've also included the carrying capacity K, as a parameter because it was not explicitly listed as on in the original R file.
+
+```{r calling_function, setting_initial_conditions}
+# sourcing function 
+source("../Singersoll_lotvmodK.R")
+
+lotvmodK
+
+# setting initial conditions
+pars = list(rprey=0.5, alpha=0.3, eff=0.2, pmort=0.2, hunt_rate=0.1, min_prey=5, K=100)
+currpop = c(prey=50, pred=5)
+days = seq(from=1, to=1000)
+```
+
+```{r}
+# using the function for min_prey = 5, K = 100, hunt_rate = 0.1
+res = ode(func=lotvmodK, y=currpop, times=days, parms=pars)
+
+head(res, 3)
+```
+
+```{r min_prey_5, visualize_populations_over_time}
+# Set up the plotting area to have two rows and one column
+par(mfrow = c(1, 2))
+
+# Plot prey population
+plot(res[, "time"], res[, "prey"], type = "l", col = "skyblue", ylab = "Population", xlab = "Time", main = "Prey Population Over Time")
+title(main = "Prey Population Over Time", sub = "Population Dynamics with Hunting Effect", col.main = "skyblue")
+
+# Plot predator population
+plot(res[, "time"], res[, "pred"], type = "l", col = "#E76F51", ylab = "Population", xlab = "Time", main = "Predator Population Over Time")
+title(main = "Predator Population Over Time", sub = "Population Dynamics with Hunting Effect", col.main = "#E76F51")
+```
+## Part 2
+Let's get a collection of possible hunting rates and minimum prey settings to advise our team with for the future! An artbitrary stability threshold of 30 was selected to control the faux-sustainability of our mock-environment. This stability threshold can be adjusted according to a specific habitat suitability standards necessary to thrive/survive. It's purpose is to ensure we don't wipe out the prey population overtime. A relationship that yields a minimum of greater than 30 prey in this case and more than 0 predators are labeled stable in this assessment.
+
+Okay super interesting, all of the different combinations tested all round off with a final_prey population of ~66 and final predator pop of ~91. A little more variation is observed in the final_pred column. However I find it interesting that we're seeing ~30 pop. difference between the two groups and that's similar to our stability threshold.
+```{r  exploring_parameter_settings}
+# Define parameter ranges
+hunt_rates = seq(0, 0.2, by = 0.01)
+min_preys = seq(10, 500, by = 10)
+
+# can be changed to a move appropriate value
+stability_threshold = 30
+
+# Function to run the model and check stability
+run_model <- function(hunt_rate, min_prey) {
+  pars = list(rprey = 0.95, alpha = 0.01, eff = 0.6, pmort = 0.4, 
+              hunt_rate = hunt_rate, min_prey = min_prey, K = 2000)
+  currpop = c(prey = 100, pred = 10)
+  days = seq(from = 1, to = 1000, by = 1)
+  
+  res = ode(func = lotvmodK, y = currpop, times = days, parms = pars)
+  final_prey = tail(res[, "prey"], 1)
+  final_pred = tail(res[, "pred"], 1)
+  
+  return(list(final_prey = final_prey, final_pred = final_pred, stable = final_prey > stability_threshold && final_pred > 0))
+}
+
+# Run the model for each combination of hunt_rate and min_prey
+results <- expand.grid(hunt_rate = hunt_rates, min_prey = min_preys)
+results$final_prey <- NA
+results$final_pred <- NA
+results$stable <- NA
+
+for (i in 1:nrow(results)) {
+  res <- run_model(results$hunt_rate[i], results$min_prey[i])
+  results$final_prey[i] <- res$final_prey
+  results$final_pred[i] <- res$final_pred
+  results$stable[i] <- res$stable
+}
+
+head(results, 10)
+```
+
+Let's take a quick peek and see if any simulations did not produce a stable label.
+Great! Every output was considered stable with the stability threshold of final_prey > 30 over a 1000 day time period. The initial conditions in this model had prey = 100, therefore, I would have this be the initial min_prey requirement and moving forward with the additional safety blanket of a stability threshold of 30. Therefore, the advisory provided would be that a minimum of 30 prey need to be present at the end of every season to ensure the livelihood of the following season. Keeping an eye on this stability threshold will make the largest impact, rather than focusing on the hunting rate. However it is important to note that I would advise the hunting rate stays between 0 and 0.2.
+```{r visualize_diff_param_settings}
+ggplot(results, aes(x = hunt_rate, y = min_prey, fill = stable)) + 
+  geom_tile() +
+  scale_fill_manual(values = c("TRUE" = "darkolivegreen", "FALSE" = "red4")) +
+  labs(title = "Stability of Predator-Prey Populations",
+       x = "Hunting Rate",
+       y = "Minimum Prey Population Before Hunting",
+       fill = "Stable") +
+  theme_minimal()
+```
+

@@ -47,7 +47,7 @@ Structured practices that ensures clear, readable code
 
 -   documentation to explain functionality
 
--   modularity (organized “independent” building blocks)
+-   modularity (organized "independent" building blocks)
 
 -   testing frequently as you develop each module and after
 
@@ -59,7 +59,7 @@ Structured practices that ensures clear, readable code
 
 Developing readable (by PEOPLE) code and documenting what you are doing is essential
 
-*“When was the last time you spent a pleasant evening in a comfortable chair, reading a good program?”— Bentley (1986)*
+*"When was the last time you spent a pleasant evening in a comfortable chair, reading a good program?"--- Bentley (1986)*
 
 # Documentation!
 
@@ -123,11 +123,11 @@ compute_GDP_change(3, slope = -10)
 
 # Building Models:Documentation
 
-There is also a standard format for documentation that can be read by automatic programs (roxygen2) - an R package that generate “standard” R documentation - manual or help pages
+There is also a standard format for documentation that can be read by automatic programs (roxygen2) - an R package that generate "standard" R documentation - manual or help pages
 
 These automated approaches for building documentation (like roxygen2) and meta data (descriptions of data sets) are increasingly common - so you should get into the practice of being structured in your approach to documentation
 
-We will use the conventions that work with roxygen2 - and then use this program to generate formal R documentation. Roxygen is similar to Doxygen which is used for C code…so its a widely used format
+We will use the conventions that work with roxygen2 - and then use this program to generate formal R documentation. Roxygen is similar to Doxygen which is used for C code...so its a widely used format
 
 ------------------------------------------------------------------------
 
@@ -135,7 +135,7 @@ We will use the conventions that work with roxygen2 - and then use this program 
 
 For returning more than one item from your function!
 
--   Lists are the most “informal” data structures in R
+-   Lists are the most "informal" data structures in R
 
 -   List are really useful for keeping track of and organizing groups of things that are not all the same
 
